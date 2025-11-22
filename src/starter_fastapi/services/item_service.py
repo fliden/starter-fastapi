@@ -1,7 +1,7 @@
 """Item service containing business logic for item operations."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from starter_fastapi.core.exceptions import NotFoundError
 from starter_fastapi.core.logging import get_logger
@@ -31,7 +31,7 @@ class ItemService:
             The created item
         """
         item_id = str(uuid.uuid4())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         item = Item(
             id=item_id,
@@ -135,7 +135,7 @@ class ItemService:
             setattr(item, field, value)
 
         # Update the timestamp
-        item.updated_at = datetime.now(timezone.utc)
+        item.updated_at = datetime.now(UTC)
 
         self._items[item_id] = item
 

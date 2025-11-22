@@ -3,7 +3,7 @@
 from typing import Any
 
 from fastapi import HTTPException, Request, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from starter_fastapi.core.logging import get_logger
 
@@ -35,7 +35,9 @@ class AppException(Exception):
 class NotFoundError(AppException):
     """Exception raised when a resource is not found."""
 
-    def __init__(self, message: str = "Resource not found", details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str = "Resource not found", details: dict[str, Any] | None = None
+    ) -> None:
         """Initialize the exception.
 
         Args:
@@ -65,7 +67,9 @@ class ValidationError(AppException):
 class UnauthorizedError(AppException):
     """Exception raised when authentication fails."""
 
-    def __init__(self, message: str = "Unauthorized", details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str = "Unauthorized", details: dict[str, Any] | None = None
+    ) -> None:
         """Initialize the exception.
 
         Args:
@@ -88,7 +92,7 @@ class ForbiddenError(AppException):
         super().__init__(message, status_code=status.HTTP_403_FORBIDDEN, details=details)
 
 
-async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
+async def app_exception_handler(request: Request, exc: AppException) -> Response:
     """Handle application exceptions.
 
     Args:
@@ -116,7 +120,7 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
     )
 
 
-async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> Response:
     """Handle HTTP exceptions.
 
     Args:
@@ -143,7 +147,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     )
 
 
-async def generic_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+async def generic_exception_handler(request: Request, exc: Exception) -> Response:
     """Handle unexpected exceptions.
 
     Args:

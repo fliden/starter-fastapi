@@ -6,6 +6,16 @@ from fastapi.testclient import TestClient
 from starter_fastapi.main import app
 from starter_fastapi.models.item import ItemCreate
 from starter_fastapi.services.item_service import ItemService
+from starter_fastapi.services.item_service import item_service as global_item_service
+
+
+@pytest.fixture(autouse=True)
+def reset_global_item_service() -> None:
+    """Reset the global item service instance before each test.
+
+    This ensures test isolation by clearing the in-memory storage.
+    """
+    global_item_service._items.clear()
 
 
 @pytest.fixture

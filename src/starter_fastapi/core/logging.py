@@ -2,7 +2,7 @@
 
 import logging
 import sys
-from typing import Any
+from typing import Any, cast
 
 import structlog
 from structlog.types import EventDict, Processor
@@ -39,16 +39,20 @@ def setup_logging() -> None:
 
     # Add format-specific processors
     if settings.log_format == "json":
-        processors.extend([
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer(),
-        ])
+        processors.extend(
+            [
+                structlog.processors.format_exc_info,
+                structlog.processors.JSONRenderer(),
+            ]
+        )
     else:
         # Console format for development
-        processors.extend([
-            structlog.processors.ExceptionPrettyPrinter(),
-            structlog.dev.ConsoleRenderer(colors=True),
-        ])
+        processors.extend(
+            [
+                structlog.processors.ExceptionPrettyPrinter(),
+                structlog.dev.ConsoleRenderer(colors=True),
+            ]
+        )
 
     # Configure structlog
     structlog.configure(
@@ -69,4 +73,4 @@ def get_logger(name: str | None = None) -> structlog.stdlib.BoundLogger:
     Returns:
         Configured structlog logger instance.
     """
-    return structlog.get_logger(name)
+    return cast("structlog.stdlib.BoundLogger", structlog.get_logger(name))

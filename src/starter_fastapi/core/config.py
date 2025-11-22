@@ -23,7 +23,9 @@ class Settings(BaseSettings):
         default="Production-ready FastAPI starter template",
         description="Application description",
     )
-    environment: str = Field(default="development", description="Environment (development, staging, production)")
+    environment: str = Field(
+        default="development", description="Environment (development, staging, production)"
+    )
 
     # Server settings
     host: str = Field(default="0.0.0.0", description="Server host")
@@ -58,7 +60,9 @@ class Settings(BaseSettings):
         """Parse CORS origins from string or list."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
-        return v
+        if isinstance(v, list):
+            return v
+        return []
 
     @field_validator("cors_methods", mode="before")
     @classmethod
@@ -66,7 +70,9 @@ class Settings(BaseSettings):
         """Parse CORS methods from string or list."""
         if isinstance(v, str):
             return [method.strip() for method in v.split(",")]
-        return v
+        if isinstance(v, list):
+            return v
+        return []
 
     @field_validator("cors_headers", mode="before")
     @classmethod
@@ -74,7 +80,9 @@ class Settings(BaseSettings):
         """Parse CORS headers from string or list."""
         if isinstance(v, str):
             return [header.strip() for header in v.split(",")]
-        return v
+        if isinstance(v, list):
+            return v
+        return []
 
     @field_validator("environment")
     @classmethod

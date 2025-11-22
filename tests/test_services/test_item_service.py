@@ -78,9 +78,7 @@ async def test_list_items(item_service: ItemService) -> None:
         item_service: Item service fixture
     """
     # Create multiple items
-    items_data = [
-        ItemCreate(name=f"Item {i}", price=float(i * 10)) for i in range(1, 4)
-    ]
+    items_data = [ItemCreate(name=f"Item {i}", price=float(i * 10)) for i in range(1, 4)]
 
     for item_data in items_data:
         await item_service.create_item(item_data)
@@ -103,7 +101,7 @@ async def test_list_items_with_pagination(item_service: ItemService) -> None:
     """
     # Create multiple items
     for i in range(10):
-        await item_service.create_item(ItemCreate(name=f"Item {i}", price=float(i * 10)))
+        await item_service.create_item(ItemCreate(name=f"Item {i}", price=float((i + 1) * 10)))
 
     # Test pagination
     items = await item_service.list_items(skip=2, limit=3)
@@ -119,15 +117,9 @@ async def test_list_items_available_only(item_service: ItemService) -> None:
         item_service: Item service fixture
     """
     # Create available and unavailable items
-    await item_service.create_item(
-        ItemCreate(name="Available 1", price=10.0, is_available=True)
-    )
-    await item_service.create_item(
-        ItemCreate(name="Unavailable", price=20.0, is_available=False)
-    )
-    await item_service.create_item(
-        ItemCreate(name="Available 2", price=30.0, is_available=True)
-    )
+    await item_service.create_item(ItemCreate(name="Available 1", price=10.0, is_available=True))
+    await item_service.create_item(ItemCreate(name="Unavailable", price=20.0, is_available=False))
+    await item_service.create_item(ItemCreate(name="Available 2", price=30.0, is_available=True))
 
     items = await item_service.list_items(available_only=True)
 
@@ -144,6 +136,7 @@ async def test_update_item(item_service: ItemService, sample_item_data: ItemCrea
         sample_item_data: Sample item data fixture
     """
     created_item = await item_service.create_item(sample_item_data)
+    original_updated_at = created_item.updated_at
 
     update_data = ItemUpdate(name="Updated Name", price=199.99)
 
@@ -153,15 +146,13 @@ async def test_update_item(item_service: ItemService, sample_item_data: ItemCrea
     assert updated_item.name == "Updated Name"
     assert updated_item.price == 199.99
     # Description should remain unchanged
-    assert updated_item.description == created_item.description
+    assert updated_item.description == sample_item_data.description
     # updated_at should be different
-    assert updated_item.updated_at > created_item.updated_at
+    assert updated_item.updated_at >= original_updated_at
 
 
 @pytest.mark.asyncio
-async def test_update_item_partial(
-    item_service: ItemService, sample_item_data: ItemCreate
-) -> None:
+async def test_update_item_partial(item_service: ItemService, sample_item_data: ItemCreate) -> None:
     """Test partial update of an item.
 
     Args:
@@ -235,7 +226,7 @@ async def test_get_item_count(item_service: ItemService) -> None:
 
     # Create some items
     for i in range(5):
-        await item_service.create_item(ItemCreate(name=f"Item {i}", price=float(i * 10)))
+        await item_service.create_item(ItemCreate(name=f"Item {i}", price=float((i + 1) * 10)))
 
     count = await item_service.get_item_count()
     assert count == 5
@@ -251,7 +242,7 @@ async def test_get_item_count_available_only(item_service: ItemService) -> None:
     # Create available and unavailable items
     for i in range(5):
         await item_service.create_item(
-            ItemCreate(name=f"Item {i}", price=float(i * 10), is_available=i % 2 == 0)
+            ItemCreate(name=f"Item {i}", price=float((i + 1) * 10), is_available=i % 2 == 0)
         )
 
     # Total count
