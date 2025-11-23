@@ -45,7 +45,12 @@ jobs:
           region: ${{ env.REGION }}
           # This must match the tag created in Step 3
           image: "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}"
-          flags: '--allow-unauthenticated' # Makes the URL public. Remove if you want private access.
+          flags: |
+            --allow-unauthenticated
+            --liveness-probe-path=/live
+            --liveness-probe-initial-delay-seconds=5
+            --startup-probe-path=/ready
+            --startup-probe-initial-delay-seconds=5
 
       # 5. Show Output URL
       - name: 'Show output'
