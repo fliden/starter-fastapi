@@ -12,6 +12,10 @@ dependencies = [
     "structlog>=24.4.0",
     "python-multipart>=0.0.12",
     "httpx>=0.27.0",
+    "sqlmodel>=0.0.22",
+    "alembic>=1.13.0",
+    "aiosqlite>=0.20.0",
+    "greenlet>=3.0.0",
 ]
 
 [project.optional-dependencies]

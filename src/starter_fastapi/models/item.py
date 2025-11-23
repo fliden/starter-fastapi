@@ -3,17 +3,18 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import field_validator
+from sqlalchemy import JSON, Column
+from sqlmodel import Field, SQLModel
 
 
-class ItemBase(BaseModel):
+class ItemBase(SQLModel):
     """Base item model with common fields."""
 
     name: str = Field(..., min_length=1, max_length=100, description="Item name")
     description: str | None = Field(None, max_length=500, description="Item description")
     price: float = Field(..., gt=0, description="Item price (must be positive)")
     is_available: bool = Field(default=True, description="Item availability status")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     @field_validator("name")
     @classmethod
@@ -33,10 +34,14 @@ class ItemBase(BaseModel):
 class ItemCreate(ItemBase):
     """Model for creating a new item."""
 
-    pass
+    meta: dict[str, Any] = Field(
+        default_factory=dict,
+        alias="metadata",
+        description="Additional metadata",
+    )
 
 
-class ItemUpdate(BaseModel):
+class ItemUpdate(SQLModel):
     """Model for updating an existing item.
 
     All fields are optional to support partial updates.
@@ -46,7 +51,11 @@ class ItemUpdate(BaseModel):
     description: str | None = Field(None, max_length=500, description="Item description")
     price: float | None = Field(None, gt=0, description="Item price (must be positive)")
     is_available: bool | None = Field(None, description="Item availability status")
-    metadata: dict[str, Any] | None = Field(None, description="Additional metadata")
+    meta: dict[str, Any] | None = Field(
+        None,
+        alias="metadata",
+        description="Additional metadata",
+    )
 
     @field_validator("name")
     @classmethod
@@ -65,10 +74,16 @@ class ItemUpdate(BaseModel):
         return v
 
 
-class Item(ItemBase):
+class Item(ItemBase, table=True):
     """Complete item model with all fields including database fields."""
 
-    id: str = Field(..., description="Unique item identifier")
+    id: str = Field(default=None, primary_key=True, description="Unique item identifier")
+    meta: dict[str, Any] = Field(
+        default_factory=dict,
+        alias="metadata",
+        sa_column=Column(JSON),
+        description="Additional metadata",
+    )
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 

@@ -1,19 +1,21 @@
 """Tests for item management endpoints."""
 
+import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 from starter_fastapi.models.item import ItemCreate
 
 
-def test_create_item(client: TestClient, sample_item_data: ItemCreate) -> None:
+@pytest.mark.asyncio
+async def test_create_item(client: AsyncClient, sample_item_data: ItemCreate) -> None:
     """Test creating a new item.
 
     Args:
         client: Test client fixture
         sample_item_data: Sample item data fixture
     """
-    response = client.post(
+    response = await client.post(
         "/api/v1/items",
         json=sample_item_data.model_dump(),
     )
@@ -30,14 +32,17 @@ def test_create_item(client: TestClient, sample_item_data: ItemCreate) -> None:
     assert "updated_at" in data
 
 
-def test_create_item_minimal(client: TestClient, sample_item_data_minimal: ItemCreate) -> None:
+@pytest.mark.asyncio
+async def test_create_item_minimal(
+    client: AsyncClient, sample_item_data_minimal: ItemCreate
+) -> None:
     """Test creating an item with minimal required fields.
 
     Args:
         client: Test client fixture
         sample_item_data_minimal: Minimal sample item data fixture
     """
-    response = client.post(
+    response = await client.post(
         "/api/v1/items",
         json=sample_item_data_minimal.model_dump(),
     )
@@ -50,7 +55,8 @@ def test_create_item_minimal(client: TestClient, sample_item_data_minimal: ItemC
     assert data["is_available"] is True  # Default value
 
 
-def test_create_item_invalid_price(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_create_item_invalid_price(client: AsyncClient) -> None:
     """Test creating an item with invalid price.
 
     Args:
@@ -61,12 +67,13 @@ def test_create_item_invalid_price(client: TestClient) -> None:
         "price": -10.0,  # Invalid: negative price
     }
 
-    response = client.post("/api/v1/items", json=invalid_data)
+    response = await client.post("/api/v1/items", json=invalid_data)
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
-def test_get_item(client: TestClient, sample_item_data: ItemCreate) -> None:
+@pytest.mark.asyncio
+async def test_get_item(client: AsyncClient, sample_item_data: ItemCreate) -> None:
     """Test retrieving a specific item by ID.
 
     Args:
@@ -74,7 +81,7 @@ def test_get_item(client: TestClient, sample_item_data: ItemCreate) -> None:
         sample_item_data: Sample item data fixture
     """
     # First create an item
-    create_response = client.post(
+    create_response = await client.post(
         "/api/v1/items",
         json=sample_item_data.model_dump(),
     )
@@ -82,7 +89,7 @@ def test_get_item(client: TestClient, sample_item_data: ItemCreate) -> None:
     item_id = created_item["id"]
 
     # Then retrieve it
-    response = client.get(f"/api/v1/items/{item_id}")
+    response = await client.get(f"/api/v1/items/{item_id}")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -92,13 +99,14 @@ def test_get_item(client: TestClient, sample_item_data: ItemCreate) -> None:
     assert data["price"] == sample_item_data.price
 
 
-def test_get_item_not_found(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_item_not_found(client: AsyncClient) -> None:
     """Test retrieving a non-existent item.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/api/v1/items/non-existent-id")
+    response = await client.get("/api/v1/items/non-existent-id")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -106,13 +114,14 @@ def test_get_item_not_found(client: TestClient) -> None:
     assert "error" in data
 
 
-def test_list_items_empty(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_items_empty(client: AsyncClient) -> None:
     """Test listing items when none exist.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/api/v1/items")
+    response = await client.get("/api/v1/items")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -120,7 +129,8 @@ def test_list_items_empty(client: TestClient) -> None:
     assert isinstance(data, list)
 
 
-def test_list_items(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_items(client: AsyncClient) -> None:
     """Test listing multiple items.
 
     Args:
@@ -128,7 +138,7 @@ def test_list_items(client: TestClient) -> None:
     """
     # Create multiple items
     for i in range(3):
-        client.post(
+        await client.post(
             "/api/v1/items",
             json={
                 "name": f"Item {i}",
@@ -137,7 +147,7 @@ def test_list_items(client: TestClient) -> None:
         )
 
     # List all items
-    response = client.get("/api/v1/items")
+    response = await client.get("/api/v1/items")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -146,7 +156,8 @@ def test_list_items(client: TestClient) -> None:
     assert len(data) == 3
 
 
-def test_list_items_with_pagination(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_items_with_pagination(client: AsyncClient) -> None:
     """Test listing items with pagination.
 
     Args:
@@ -154,7 +165,7 @@ def test_list_items_with_pagination(client: TestClient) -> None:
     """
     # Create multiple items
     for i in range(10):
-        client.post(
+        await client.post(
             "/api/v1/items",
             json={
                 "name": f"Item {i}",
@@ -163,7 +174,7 @@ def test_list_items_with_pagination(client: TestClient) -> None:
         )
 
     # Test pagination
-    response = client.get("/api/v1/items?skip=2&limit=3")
+    response = await client.get("/api/v1/items?skip=2&limit=3")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -172,24 +183,25 @@ def test_list_items_with_pagination(client: TestClient) -> None:
     assert len(data) == 3
 
 
-def test_list_items_available_only(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_list_items_available_only(client: AsyncClient) -> None:
     """Test filtering items by availability.
 
     Args:
         client: Test client fixture
     """
     # Create available and unavailable items
-    client.post(
+    await client.post(
         "/api/v1/items",
         json={"name": "Available Item", "price": 10.0, "is_available": True},
     )
-    client.post(
+    await client.post(
         "/api/v1/items",
         json={"name": "Unavailable Item", "price": 20.0, "is_available": False},
     )
 
     # List only available items
-    response = client.get("/api/v1/items?available_only=true")
+    response = await client.get("/api/v1/items?available_only=true")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -197,7 +209,8 @@ def test_list_items_available_only(client: TestClient) -> None:
     assert all(item["is_available"] for item in data)
 
 
-def test_update_item(client: TestClient, sample_item_data: ItemCreate) -> None:
+@pytest.mark.asyncio
+async def test_update_item(client: AsyncClient, sample_item_data: ItemCreate) -> None:
     """Test updating an item.
 
     Args:
@@ -205,7 +218,7 @@ def test_update_item(client: TestClient, sample_item_data: ItemCreate) -> None:
         sample_item_data: Sample item data fixture
     """
     # Create an item
-    create_response = client.post(
+    create_response = await client.post(
         "/api/v1/items",
         json=sample_item_data.model_dump(),
     )
@@ -218,7 +231,7 @@ def test_update_item(client: TestClient, sample_item_data: ItemCreate) -> None:
         "price": 149.99,
     }
 
-    response = client.patch(f"/api/v1/items/{item_id}", json=update_data)
+    response = await client.patch(f"/api/v1/items/{item_id}", json=update_data)
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -230,7 +243,8 @@ def test_update_item(client: TestClient, sample_item_data: ItemCreate) -> None:
     assert data["description"] == sample_item_data.description
 
 
-def test_update_item_not_found(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_update_item_not_found(client: AsyncClient) -> None:
     """Test updating a non-existent item.
 
     Args:
@@ -238,12 +252,13 @@ def test_update_item_not_found(client: TestClient) -> None:
     """
     update_data = {"name": "Updated Item"}
 
-    response = client.patch("/api/v1/items/non-existent-id", json=update_data)
+    response = await client.patch("/api/v1/items/non-existent-id", json=update_data)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_item(client: TestClient, sample_item_data: ItemCreate) -> None:
+@pytest.mark.asyncio
+async def test_delete_item(client: AsyncClient, sample_item_data: ItemCreate) -> None:
     """Test deleting an item.
 
     Args:
@@ -251,7 +266,7 @@ def test_delete_item(client: TestClient, sample_item_data: ItemCreate) -> None:
         sample_item_data: Sample item data fixture
     """
     # Create an item
-    create_response = client.post(
+    create_response = await client.post(
         "/api/v1/items",
         json=sample_item_data.model_dump(),
     )
@@ -259,27 +274,29 @@ def test_delete_item(client: TestClient, sample_item_data: ItemCreate) -> None:
     item_id = created_item["id"]
 
     # Delete the item
-    response = client.delete(f"/api/v1/items/{item_id}")
+    response = await client.delete(f"/api/v1/items/{item_id}")
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
 
     # Verify the item is deleted
-    get_response = client.get(f"/api/v1/items/{item_id}")
+    get_response = await client.get(f"/api/v1/items/{item_id}")
     assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_delete_item_not_found(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_delete_item_not_found(client: AsyncClient) -> None:
     """Test deleting a non-existent item.
 
     Args:
         client: Test client fixture
     """
-    response = client.delete("/api/v1/items/non-existent-id")
+    response = await client.delete("/api/v1/items/non-existent-id")
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-def test_get_item_count(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_item_count(client: AsyncClient) -> None:
     """Test getting item count.
 
     Args:
@@ -287,7 +304,7 @@ def test_get_item_count(client: TestClient) -> None:
     """
     # Create some items
     for i in range(5):
-        client.post(
+        await client.post(
             "/api/v1/items",
             json={
                 "name": f"Item {i}",
@@ -297,7 +314,7 @@ def test_get_item_count(client: TestClient) -> None:
         )
 
     # Get total count
-    response = client.get("/api/v1/items/stats/count")
+    response = await client.get("/api/v1/items/stats/count")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -305,7 +322,8 @@ def test_get_item_count(client: TestClient) -> None:
     assert data["count"] == 5
 
 
-def test_get_item_count_available_only(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_get_item_count_available_only(client: AsyncClient) -> None:
     """Test getting count of available items only.
 
     Args:
@@ -313,7 +331,7 @@ def test_get_item_count_available_only(client: TestClient) -> None:
     """
     # Create available and unavailable items
     for i in range(5):
-        client.post(
+        await client.post(
             "/api/v1/items",
             json={
                 "name": f"Item {i}",
@@ -323,7 +341,7 @@ def test_get_item_count_available_only(client: TestClient) -> None:
         )
 
     # Get available count (0, 2, 4 = 3 items)
-    response = client.get("/api/v1/items/stats/count?available_only=true")
+    response = await client.get("/api/v1/items/stats/count?available_only=true")
 
     assert response.status_code == status.HTTP_200_OK
 
