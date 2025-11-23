@@ -117,9 +117,7 @@ class ItemService:
 
         return items
 
-    async def update_item(
-        self, session: AsyncSession, item_id: str, item_data: ItemUpdate
-    ) -> Item:
+    async def update_item(self, session: AsyncSession, item_id: str, item_data: ItemUpdate) -> Item:
         """Update an existing item.
 
         Args:
@@ -194,4 +192,3 @@ class ItemService:
 
 # Global service instance
 item_service = ItemService()
-
