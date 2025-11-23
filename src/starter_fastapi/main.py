@@ -80,7 +80,6 @@ app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
 app.add_exception_handler(Exception, generic_exception_handler)
 
 
-
 # Include API routers
 app.include_router(v1_router, prefix=settings.api_v1_prefix)
 app.include_router(health.router, tags=["health"])
