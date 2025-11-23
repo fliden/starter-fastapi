@@ -16,7 +16,7 @@ engine: AsyncEngine = create_async_engine(
 )
 
 # Create async session factory
-async_session_factory = sessionmaker(
+async_session = sessionmaker(  # type: ignore
     engine,
     class_=AsyncSession,
     expire_on_commit=False,
@@ -29,5 +29,5 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     Yields:
         AsyncSession: Database session
     """
-    async with async_session_factory() as session:
+    async with async_session() as session:
         yield session

@@ -9,7 +9,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
+    UV_SYSTEM_PYTHON=1 \
+    UV_HTTP_TIMEOUT=600
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -22,11 +23,14 @@ FROM base AS builder
 
 # Copy dependency files
 COPY pyproject.toml ./
+COPY uv.lock ./
 COPY .python-version ./
 
-# Install dependencies
-# Install dependencies
-RUN uv sync --frozen --no-dev
+# Install dependencies with cache mount for better reliability
+# Install dependencies with cache mount for better reliability
+# Use uv export to generate requirements from lock file and install into system python
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv export --frozen --no-dev --no-emit-project --format requirements-txt | uv pip install --system -r /dev/stdin
 
 # Stage 3: Production stage
 FROM base AS production
@@ -37,6 +41,9 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
 COPY src/ ./src/
+
+# Set PYTHONPATH to include source directory
+ENV PYTHONPATH=/app/src
 
 # Change ownership to non-root user
 RUN chown -R appuser:appuser /app
