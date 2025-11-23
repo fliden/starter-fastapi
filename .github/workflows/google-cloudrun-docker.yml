@@ -1,0 +1,56 @@
+name: Deploy to Cloud Run
+
+on:
+  workflow_dispatch: 
+  
+env:
+  SERVICE_NAME: starter-fastapi
+  REGION: us-central1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 1. Authenticate to Google Cloud
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      # 2. Setup gcloud SDK (Required for 'gcloud builds submit')
+      - name: Set up Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      # 3. Build and Push Container Image
+      # This zips your code, sends it to Google Cloud Build, builds the Dockerfile there,
+      # and stores the image in Artifact Registry.
+      - name: Build and Push
+        run: |-
+          gcloud builds submit \
+            --quiet \
+            --gcs-log-dir "gs://${{ secrets.GCP_PROJECT_ID }}-build-logs" \
+            --tag "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+
+      # 4. Deploy to Cloud Run
+      - id: 'deploy' # Added ID so we can reference outputs later
+        name: 'Deploy to Cloud Run'
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
+          # This must match the tag created in Step 3
+          image: "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          flags: |
+            --allow-unauthenticated
+            --liveness-probe=initialDelaySeconds=5,httpGet.path=/live
+            --startup-probe=initialDelaySeconds=5,httpGet.path=/ready
+
+      # 5. Show Output URL
+      - name: 'Show output'
+        run: |-
+          echo "Deployed Service URL: ${{ steps.deploy.outputs.url }}"
