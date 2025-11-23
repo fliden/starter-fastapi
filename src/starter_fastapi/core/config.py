@@ -37,13 +37,13 @@ class Settings(BaseSettings):
     reload: bool = Field(default=False, description="Enable auto-reload (development only)")
 
     # CORS settings
-    cors_origins: list[str] = Field(
+    cors_origins: list[str] | str = Field(
         default=["http://localhost:3000", "http://localhost:8000"],
         description="Allowed CORS origins",
     )
     cors_credentials: bool = Field(default=True, description="Allow credentials in CORS")
-    cors_methods: list[str] = Field(default=["*"], description="Allowed HTTP methods")
-    cors_headers: list[str] = Field(default=["*"], description="Allowed HTTP headers")
+    cors_methods: list[str] | str = Field(default=["*"], description="Allowed HTTP methods")
+    cors_headers: list[str] | str = Field(default=["*"], description="Allowed HTTP headers")
 
     # Logging settings
     log_level: str = Field(default="INFO", description="Logging level")

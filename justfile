@@ -10,7 +10,7 @@ install:
 
 # Install dependencies including dev dependencies
 install-dev:
-    uv sync --all-extras --dev
+    uv sync --all-extras
 
 # Run the FastAPI application in development mode
 dev:
