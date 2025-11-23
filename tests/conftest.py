@@ -1,41 +1,66 @@
 """Shared test fixtures and configuration."""
 
+from collections.abc import AsyncGenerator
+
 import pytest
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from starter_fastapi.core.db import get_session
 from starter_fastapi.main import app
 from starter_fastapi.models.item import ItemCreate
-from starter_fastapi.services.item_service import ItemService
-from starter_fastapi.services.item_service import item_service as global_item_service
+from starter_fastapi.services.item_service import ItemService, item_service
 
 
-@pytest.fixture(autouse=True)
-def reset_global_item_service() -> None:
-    """Reset the global item service instance before each test.
+@pytest.fixture(name="session")
+async def session_fixture() -> AsyncGenerator[AsyncSession, None]:
+    """Create a fresh database session for each test."""
+    engine = create_async_engine(
+        "sqlite+aiosqlite:///:memory:",
+        echo=False,
+        future=True,
+    )
 
-    This ensures test isolation by clearing the in-memory storage.
-    """
-    global_item_service._items.clear()
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+
+    async_session = sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+
+    async with async_session() as session:
+        yield session
+
+    await engine.dispose()
 
 
-@pytest.fixture
-def client() -> TestClient:
-    """Create a test client for the FastAPI application.
+@pytest.fixture(name="client")
+async def client_fixture(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create a test client for the FastAPI application."""
+    app.dependency_overrides[get_session] = lambda: session
 
-    Returns:
-        Test client instance
-    """
-    return TestClient(app)
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
 def item_service() -> ItemService:
-    """Create a fresh item service instance for testing.
+    """Get the item service instance.
 
     Returns:
         ItemService instance
     """
-    return ItemService()
+    from starter_fastapi.services.item_service import item_service
+
+    return item_service
 
 
 @pytest.fixture
@@ -50,7 +75,7 @@ def sample_item_data() -> ItemCreate:
         description="This is a test item",
         price=99.99,
         is_available=True,
-        metadata={"category": "test", "tags": ["sample"]},
+        meta={"category": "test", "tags": ["sample"]},
     )
 
 
@@ -68,25 +93,25 @@ def sample_item_data_minimal() -> ItemCreate:
 
 
 @pytest.fixture
-async def created_item(item_service: ItemService, sample_item_data: ItemCreate):
+async def created_item(session: AsyncSession, sample_item_data: ItemCreate):
     """Create and return a sample item.
 
     Args:
-        item_service: Item service instance
+        session: Database session
         sample_item_data: Sample item data
 
     Returns:
         Created item instance
     """
-    return await item_service.create_item(sample_item_data)
+    return await item_service.create_item(session, sample_item_data)
 
 
 @pytest.fixture
-async def multiple_items(item_service: ItemService):
+async def multiple_items(session: AsyncSession):
     """Create multiple sample items for testing.
 
     Args:
-        item_service: Item service instance
+        session: Database session
 
     Returns:
         List of created items
@@ -98,7 +123,7 @@ async def multiple_items(item_service: ItemService):
 
     items = []
     for item_data in items_data:
-        item = await item_service.create_item(item_data)
+        item = await item_service.create_item(session, item_data)
         items.append(item)
 
     return items

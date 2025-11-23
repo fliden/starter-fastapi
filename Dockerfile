@@ -25,7 +25,8 @@ COPY pyproject.toml ./
 COPY .python-version ./
 
 # Install dependencies
-RUN uv pip install --no-cache -r pyproject.toml
+# Install dependencies
+RUN uv sync --frozen --no-dev
 
 # Stage 3: Production stage
 FROM base AS production

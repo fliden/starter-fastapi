@@ -1,16 +1,18 @@
 """Tests for health check endpoints."""
 
+import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 
-def test_health_check(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient) -> None:
     """Test the health check endpoint.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/api/v1/health")
+    response = await client.get("/api/v1/health")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -22,13 +24,14 @@ def test_health_check(client: TestClient) -> None:
     assert "environment" in data
 
 
-def test_readiness_check(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_readiness_check(client: AsyncClient) -> None:
     """Test the readiness check endpoint.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/api/v1/ready")
+    response = await client.get("/api/v1/ready")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -36,13 +39,14 @@ def test_readiness_check(client: TestClient) -> None:
     assert data["status"] == "ready"
 
 
-def test_liveness_check(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_liveness_check(client: AsyncClient) -> None:
     """Test the liveness check endpoint.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/api/v1/live")
+    response = await client.get("/api/v1/live")
 
     assert response.status_code == status.HTTP_200_OK
 
@@ -50,13 +54,14 @@ def test_liveness_check(client: TestClient) -> None:
     assert data["status"] == "alive"
 
 
-def test_root_endpoint(client: TestClient) -> None:
+@pytest.mark.asyncio
+async def test_root_endpoint(client: AsyncClient) -> None:
     """Test the root endpoint.
 
     Args:
         client: Test client fixture
     """
-    response = client.get("/")
+    response = await client.get("/")
 
     assert response.status_code == status.HTTP_200_OK
 

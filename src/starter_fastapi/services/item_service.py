@@ -3,6 +3,10 @@
 import uuid
 from datetime import UTC, datetime
 
+from sqlalchemy import func
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
+
 from starter_fastapi.core.exceptions import NotFoundError
 from starter_fastapi.core.logging import get_logger
 from starter_fastapi.models.item import Item, ItemCreate, ItemUpdate
@@ -11,20 +15,13 @@ logger = get_logger(__name__)
 
 
 class ItemService:
-    """Service for managing item operations.
+    """Service for managing item operations."""
 
-    This is a simple in-memory implementation for demonstration purposes.
-    In a production application, this would interact with a database.
-    """
-
-    def __init__(self) -> None:
-        """Initialize the service with an in-memory storage."""
-        self._items: dict[str, Item] = {}
-
-    async def create_item(self, item_data: ItemCreate) -> Item:
+    async def create_item(self, session: AsyncSession, item_data: ItemCreate) -> Item:
         """Create a new item.
 
         Args:
+            session: Database session
             item_data: Item creation data
 
         Returns:
@@ -39,21 +36,24 @@ class ItemService:
             description=item_data.description,
             price=item_data.price,
             is_available=item_data.is_available,
-            metadata=item_data.metadata,
+            meta=item_data.meta,
             created_at=now,
             updated_at=now,
         )
 
-        self._items[item_id] = item
+        session.add(item)
+        await session.commit()
+        await session.refresh(item)
 
         logger.info("Item created", item_id=item_id, item_name=item.name)
 
         return item
 
-    async def get_item(self, item_id: str) -> Item:
+    async def get_item(self, session: AsyncSession, item_id: str) -> Item:
         """Get an item by ID.
 
         Args:
+            session: Database session
             item_id: The item ID
 
         Returns:
@@ -62,7 +62,7 @@ class ItemService:
         Raises:
             NotFoundError: If the item is not found
         """
-        item = self._items.get(item_id)
+        item = await session.get(Item, item_id)
 
         if not item:
             logger.warning("Item not found", item_id=item_id)
@@ -77,6 +77,7 @@ class ItemService:
 
     async def list_items(
         self,
+        session: AsyncSession,
         skip: int = 0,
         limit: int = 100,
         available_only: bool = False,
@@ -84,6 +85,7 @@ class ItemService:
         """List all items with optional filtering and pagination.
 
         Args:
+            session: Database session
             skip: Number of items to skip (for pagination)
             limit: Maximum number of items to return
             available_only: If True, only return available items
@@ -91,20 +93,22 @@ class ItemService:
         Returns:
             List of items
         """
-        items = list(self._items.values())
+        query = select(Item)
 
         if available_only:
-            items = [item for item in items if item.is_available]
+            query = query.where(Item.is_available == True)  # noqa: E712
 
         # Sort by created_at descending (newest first)
-        items.sort(key=lambda x: x.created_at, reverse=True)
+        query = query.order_by(Item.created_at.desc())
 
         # Apply pagination
-        items = items[skip : skip + limit]
+        query = query.offset(skip).limit(limit)
+
+        result = await session.exec(query)
+        items = list(result.all())
 
         logger.debug(
             "Items listed",
-            total_count=len(self._items),
             returned_count=len(items),
             skip=skip,
             limit=limit,
@@ -113,10 +117,13 @@ class ItemService:
 
         return items
 
-    async def update_item(self, item_id: str, item_data: ItemUpdate) -> Item:
+    async def update_item(
+        self, session: AsyncSession, item_id: str, item_data: ItemUpdate
+    ) -> Item:
         """Update an existing item.
 
         Args:
+            session: Database session
             item_id: The item ID
             item_data: Item update data (only provided fields will be updated)
 
@@ -126,7 +133,7 @@ class ItemService:
         Raises:
             NotFoundError: If the item is not found
         """
-        item = await self.get_item(item_id)
+        item = await self.get_item(session, item_id)
 
         # Update only the provided fields
         update_data = item_data.model_dump(exclude_unset=True)
@@ -137,45 +144,48 @@ class ItemService:
         # Update the timestamp
         item.updated_at = datetime.now(UTC)
 
-        self._items[item_id] = item
+        session.add(item)
+        await session.commit()
+        await session.refresh(item)
 
         logger.info("Item updated", item_id=item_id, updated_fields=list(update_data.keys()))
 
         return item
 
-    async def delete_item(self, item_id: str) -> None:
+    async def delete_item(self, session: AsyncSession, item_id: str) -> None:
         """Delete an item.
 
         Args:
+            session: Database session
             item_id: The item ID
 
         Raises:
             NotFoundError: If the item is not found
         """
-        if item_id not in self._items:
-            logger.warning("Attempt to delete non-existent item", item_id=item_id)
-            raise NotFoundError(
-                message=f"Item with id '{item_id}' not found",
-                details={"item_id": item_id},
-            )
+        item = await self.get_item(session, item_id)
 
-        del self._items[item_id]
+        await session.delete(item)
+        await session.commit()
 
         logger.info("Item deleted", item_id=item_id)
 
-    async def get_item_count(self, available_only: bool = False) -> int:
+    async def get_item_count(self, session: AsyncSession, available_only: bool = False) -> int:
         """Get the total count of items.
 
         Args:
+            session: Database session
             available_only: If True, only count available items
 
         Returns:
             Total number of items
         """
+        query = select(func.count()).select_from(Item)
+
         if available_only:
-            count = sum(1 for item in self._items.values() if item.is_available)
-        else:
-            count = len(self._items)
+            query = query.where(Item.is_available == True)  # noqa: E712
+
+        result = await session.exec(query)
+        count = result.one()
 
         logger.debug("Item count retrieved", count=count, available_only=available_only)
 
@@ -184,3 +194,4 @@ class ItemService:
 
 # Global service instance
 item_service = ItemService()
+

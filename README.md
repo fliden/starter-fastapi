@@ -5,6 +5,8 @@ A production-ready FastAPI starter template with modern Python best practices.
 ## Features
 
 - **FastAPI**: Modern, fast web framework for building APIs
+- **SQLModel**: SQL databases with Python objects (ORM)
+- **Alembic**: Database migrations made easy
 - **uv**: Ultra-fast Python package installer and resolver
 - **Ruff**: Lightning-fast Python linter and formatter
 - **mypy**: Static type checking
@@ -27,9 +29,12 @@ starter-fastapi/
 │       │       └── router.py   # Version router
 │       ├── core/               # Core functionality
 │       │   ├── config.py       # Configuration
+│       │   ├── db.py           # Database configuration
 │       │   ├── logging.py      # Logging setup
 │       │   └── exceptions.py   # Custom exceptions
-│       ├── models/             # Pydantic models
+│       ├── migrations/         # Database migrations
+│       │   └── versions/       # Migration scripts
+│       ├── models/             # SQLModel models
 │       ├── services/           # Business logic
 │       └── main.py             # Application entry point
 ├── tests/                      # Test suite
@@ -37,6 +42,7 @@ starter-fastapi/
 ├── Dockerfile                  # Docker configuration
 ├── docker-compose.yml          # Docker Compose setup
 ├── pyproject.toml             # Project configuration
+├── alembic.ini                # Alembic configuration
 └── justfile                    # Task runner commands
 ```
 
@@ -69,6 +75,12 @@ cp .env.example .env
 ```
 
 3. Update the `.env` file with your configuration.
+
+4. Apply database migrations:
+
+```bash
+uv run alembic upgrade head
+```
 
 ### Running the Application
 
@@ -217,7 +229,7 @@ Key configuration areas:
 
 ### Models
 
-Pydantic models for request/response validation and data structures.
+SQLModel models for database tables and Pydantic models for request/response validation.
 
 ### Services
 
@@ -238,7 +250,7 @@ This project is licensed under the MIT License.
 
 Future enhancements to consider:
 
-- [ ] Database integration (PostgreSQL, SQLAlchemy)
+- [x] Database integration (SQLModel, SQLite, Alembic)
 - [ ] Authentication & authorization (JWT, OAuth2)
 - [ ] Caching (Redis)
 - [ ] Background tasks (Celery, ARQ)

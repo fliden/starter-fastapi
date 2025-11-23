@@ -89,9 +89,13 @@ pre-commit-install:
 pre-commit-run:
     uv run pre-commit run --all-files
 
-# Generate a new migration (placeholder for future database support)
+# Generate a new migration
 migration-generate name:
-    @echo "Migration generation not yet configured"
+    uv run alembic revision --autogenerate -m "{{name}}"
+
+# Apply migrations
+migrate:
+    uv run alembic upgrade head
 
 # Show current coverage
 coverage-report:

@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     environment: str = Field(
         default="development", description="Environment (development, staging, production)"
     )
+    database_url: str = Field(
+        default="sqlite+aiosqlite:///./test.db",
+        description="Database URL",
+    )
 
     # Server settings
     host: str = Field(default="0.0.0.0", description="Server host")
