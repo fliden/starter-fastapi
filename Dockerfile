@@ -27,8 +27,10 @@ COPY uv.lock ./
 COPY .python-version ./
 
 # Install dependencies with cache mount for better reliability
+# Install dependencies with cache mount for better reliability
+# Use uv export to generate requirements from lock file and install into system python
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
+    uv export --frozen --no-dev --format requirements-txt | uv pip install --system -r /dev/stdin
 
 # Stage 3: Production stage
 FROM base AS production
