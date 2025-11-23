@@ -78,8 +78,11 @@ app.add_exception_handler(AppException, app_exception_handler)  # type: ignore[a
 app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, generic_exception_handler)
 
+from starter_fastapi.api.v1.endpoints import health
+
 # Include API routers
 app.include_router(v1_router, prefix=settings.api_v1_prefix)
+app.include_router(health.router, tags=["health"])
 
 
 @app.get("/", include_in_schema=False)
