@@ -33,6 +33,7 @@ jobs:
         run: |-
           gcloud builds submit \
             --quiet \
+            --gcs-log-dir "gs://${{ secrets.GCP_PROJECT_ID }}-build-logs" \
             --tag "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}"
 
       # 4. Deploy to Cloud Run
