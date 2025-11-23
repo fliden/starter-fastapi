@@ -3,7 +3,6 @@
 from collections.abc import AsyncGenerator
 
 import pytest
-from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,7 +12,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from starter_fastapi.core.db import get_session
 from starter_fastapi.main import app
 from starter_fastapi.models.item import ItemCreate
-from starter_fastapi.services.item_service import ItemService, item_service
+from starter_fastapi.services.item_service import ItemService
 
 
 @pytest.fixture(name="session")

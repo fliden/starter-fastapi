@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import func
-from sqlmodel import select
+from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from starter_fastapi.core.exceptions import NotFoundError
@@ -99,7 +99,7 @@ class ItemService:
             query = query.where(Item.is_available == True)  # noqa: E712
 
         # Sort by created_at descending (newest first)
-        query = query.order_by(Item.created_at.desc())
+        query = query.order_by(col(Item.created_at).desc())
 
         # Apply pagination
         query = query.offset(skip).limit(limit)
