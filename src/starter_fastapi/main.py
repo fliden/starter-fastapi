@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from starter_fastapi.api.v1 import router as v1_router
+from starter_fastapi.api.v1.endpoints import health
 from starter_fastapi.core.config import settings
 from starter_fastapi.core.exceptions import (
     AppException,
@@ -78,7 +79,7 @@ app.add_exception_handler(AppException, app_exception_handler)  # type: ignore[a
 app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(Exception, generic_exception_handler)
 
-from starter_fastapi.api.v1.endpoints import health
+
 
 # Include API routers
 app.include_router(v1_router, prefix=settings.api_v1_prefix)
