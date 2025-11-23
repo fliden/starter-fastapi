@@ -22,9 +22,9 @@ FROM base AS builder
 
 # Copy dependency files
 COPY pyproject.toml ./
+COPY uv.lock ./
 COPY .python-version ./
 
-# Install dependencies
 # Install dependencies
 RUN uv sync --frozen --no-dev
 
