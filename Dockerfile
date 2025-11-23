@@ -9,7 +9,8 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    UV_SYSTEM_PYTHON=1
+    UV_SYSTEM_PYTHON=1 \
+    UV_HTTP_TIMEOUT=600
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -25,8 +26,9 @@ COPY pyproject.toml ./
 COPY uv.lock ./
 COPY .python-version ./
 
-# Install dependencies
-RUN uv sync --frozen --no-dev
+# Install dependencies with cache mount for better reliability
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # Stage 3: Production stage
 FROM base AS production
