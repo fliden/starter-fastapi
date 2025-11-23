@@ -47,8 +47,8 @@ jobs:
           image: "${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           flags: |
             --allow-unauthenticated
-            --liveness-probe=initialDelaySeconds=5,path=/live
-            --startup-probe=initialDelaySeconds=5,path=/ready
+            --liveness-probe=initialDelaySeconds=5,http-get-path=/live
+            --startup-probe=initialDelaySeconds=5,http-get-path=/ready
 
       # 5. Show Output URL
       - name: 'Show output'
