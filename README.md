@@ -167,6 +167,8 @@ just pre-commit-run
 
 ### Build and Run
 
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions to Google Cloud Run.
+
 Build the Docker image:
 
 ```bash
